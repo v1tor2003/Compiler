@@ -5,10 +5,9 @@ RECONHECE Inteiro e Float
 Instruções para rodar pelo terminal: 
 1. clone o repositorio "git clone https://github.com/v1tor2003/Compiler.git"
 2. cd compiler 
-3. npm install
-4. npm install typescript --save-dev
-5. tsc index.ts
-6. node index.js
+3. npm install 
+4. tsc index.ts
+5. node index.js
 
 
 Instruções para arquivo de entrada:
