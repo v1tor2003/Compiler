@@ -7,6 +7,7 @@ Instruções para rodar o projeto:
 Requisitos:
 - node.js (preferência maior que v18)
 - typescript (preferência maior que v5)
+
 Passos:
 1. clone o repositorio "git clone https://github.com/v1tor2003/Compiler.git"
 2. cd compiler 
