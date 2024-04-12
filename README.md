@@ -3,6 +3,7 @@
 RECONHECE Inteiro e Float
 
 Instruções para rodar o projeto: 
+
 Requisitos:
 - node.js (preferência maior que v18)
 - typescript (preferência maior que v5)
