@@ -1,4 +1,4 @@
-# Compilador para Linguagem 
+# Compilador para Linguagem da Prof. Jaqc
 
 RECONHECE Inteiro e Float
 
