@@ -11,10 +11,10 @@ import { charType, states as s, table } from './constants'
 export class Lexer {
   /**
    * Inicia a classe lexica com as constantes importadas do arquivo de constantes.
-   * @param {TCharTypeMapping[]} charTypeMappings regexs para identificacao do simbolo para transicao
-   * @param {TState[]} states todos os estados do automato
-   * @param {TTransitionTable} transitionTable mesa de transicao onde cada uma eh um objeto literal de estado: {symbolo -> proxEstado}
-   * @returns {} a funcao eh um construtor, sem retorno.
+   * @param {TCharTypeMapping[]} charTypeMappings array de regex e seu tipo
+   * @param {TState[]} states estados do automato !! DEVE HAVER UM ESTADO INICIAL !!
+   * @param {TTransitionTable} transitionTable mesa de transicao de modo que estado: {symbolo -> proxEstado}
+   * @returns {} a funcao eh um construtor, inicia a classe, sem retorno.
   */
   constructor(
     private charTypeMappings: TCharTypeMapping[] = charType,
@@ -22,40 +22,41 @@ export class Lexer {
     private transitionTable: TTransitionTable = table
   ){}
   /**
-   * Funcao que reconhece os tokens de um arquivo de entrada.
-   * @param {string} inputPath caminho para a stream de string da entrada
+   * Funcao que reconhece os tokens segundo a stream de entrada vinda de um arquivo .txt.
+   * @param {string} inputPath caminho para o arquivo
    * @returns {Promise<TToken[]>} a funcao retorna uma lista com todos os tokens reconhecidos
   */
   public async tokenize(inputPath: string): Promise<TToken[]> {
     const tokens: TToken[] = [] 
     let state: TState = this.getStartState()
 
-    let line: number = 1    
-    for await (const l of (await this.readFile(inputPath)).readLines()){
-      let col: number = 1
-      let lexeme: string = ''
-      for(const c of l){
-        lexeme += c
+    let lineCounter: number = 1    
+    for await (const lineFromFile of (await this.readFile(inputPath)).readLines()){
+      let colCounter: number = 1
+      let token: string = ''
+      const line = lineFromFile.includes('\n') ? lineFromFile : lineFromFile + '\n'
+      for(const c of line){
+        token += c
         state = this.nextState(state, c)
-        
+
         if(state.key === 'rejected'){
-          console.log(`Unrecognized Token '${lexeme}' at line[${line}], col[${col}]`) 
-          lexeme = ''
+          console.log(`Unrecognized Token '${this.format(token)}' at line[${lineCounter}], col[${colCounter}]`) 
+          token = ''
           state = this.getStartState()
         }
 
         if(state.final) {
           tokens.push({
             type: TokenFamily[state.tokenType as TokenFamily],
-            value: lexeme.slice(0, -1)
+            value: token.slice(0, -1)
           })
 
-          lexeme = ''
+          token = ''
           state = this.getStartState()
         }
-        col++
+        colCounter++
       }
-      line++
+      lineCounter++
     }
 
     return tokens
@@ -63,7 +64,7 @@ export class Lexer {
   /**
    * Funcao realiza a leitura do arquivo de entrada .txt.
    * @param {string} path caminho do arquivo
-   * @returns {Promise<fsPromises.FileHandle>} a funcao retorna um handler para o arquivo que depois pode ser encarado como uma lista de strings
+   * @returns {Promise<fsPromises.FileHandle>} a funcao retorna um handler para o arquivo 
   */
   private async readFile(path: string): Promise<fsPromises.FileHandle> {
     try {
@@ -73,18 +74,20 @@ export class Lexer {
     }
   }
   /**
-   * Funcao realiza a leitura do arquivo de entrada .txt.
-   * @param {TState} state estado qualquer do automato
+   * Dado o estado atual, verifica na lista de regex se existe transicao no estado
+   * para aquele tipo de caracter e se sim transiciona
+   * em caso de nao existir tal transicao o estado de retorno eh o de rejeicao
+   * @param {TState} state estado atual do automato
    * @param {string} c caracter atual da stream de leitura
-   * @returns {TState} a funcao retorna o proximo estado ou 'rejected' se nao existir transicoes do atual simbolo com atual estado
+   * @returns {TState} a funcao retorna o proximo estado
   */
   private nextState(state: TState, c: string): TState{
-    const cTypes = this.getSymbolTypes(c)
-
-    let stateKey: string = ''
-    for(let i = 0; i < cTypes.length; i++){
-      stateKey = this.transitionTable[state.key][cTypes[i]]
-      if(stateKey) return this.states.find(state => state.key === stateKey) as TState
+    for (const { regex, type } of this.charTypeMappings){
+      if(!this.transitionTable[state.key][type]) continue
+      if (regex.test(c)) 
+        return this.states.find(
+          (s) => s.key === this.transitionTable[state.key][type]
+        ) as TState
     }
   
     return {
@@ -92,7 +95,7 @@ export class Lexer {
     }
   }
   /**
-   * Funcao acha, na lista de estados, o estado com a propriedade start marcada como verdade.
+   * Funcao acha na lista de estados, o incial, caso nao exista tal estado ela dispara um erro.
    * @returns {TState} a funcao retorna o estado inicial do automato
   */
   private getStartState(): TState{
@@ -101,17 +104,10 @@ export class Lexer {
     return startState
   }
   /**
-   * Funcao verifica e se sucesso, adiciona todos os tipo do caracter a uma lista.
-   * @param {string} char caracter atual da stream de leitura
-   * @returns {string[]} a funcao retorna uma lista com todos os tipos de caracter
+   * Formata string, se o caracter for '\n', mostra como caracter nao como a quebra de linha
+   * @param {string} str string para teste
+   * @returns {string} a funcao retorna a string formatada
   */
-  private getSymbolTypes(char: string): string[]{
-    let types: string[] = []
-    for (const { regex, type } of this.charTypeMappings)
-      if (regex.test(char)) types.push(type)
-      
-
-    return types
-  }
+  private format(str: string): string { return str.localeCompare('\n') === 0 ? '\\n' : str}
 }
 

@@ -6,16 +6,21 @@ import {
 } from "./types"
 
 // Base de comparacao do tipo de caracter
+// composta por um vetor de literais tal que {regex para teste, tipo correspondente}
 const charType: TCharTypeMapping[] = [
   { regex: /[0-9]/, type: 'digit' },
-  { regex: /^\./, type: 'dot'},
+  { regex: /[^0-9]/, type: '!digit'},
+  { regex: /\./, type: 'dot'},
+  { regex: /[^.]/, type: '!dot'},
   { regex: /\e/, type: 'e' },
   { regex: /\-/, type: 'hifen' },
-  { regex: /^[^\d.]$/, type: '!digit!dot'},
-  { regex: /[^0-9]/, type: '!digit'}
+  { regex: /[^0-9.]/, type: '!digit!dot'},
+  { regex: /[^0-9e]/, type: '!digit!e'}
 ]
 
 // Estados para aceitacao de Int e Float
+// apenas o inical possui como valida a propriedade de inicio
+// varios estados podem ser finais, quando finais devem possuir seu tipo
 const states: TState[] = [
   {
     key: 'q0',
@@ -44,6 +49,10 @@ const states: TState[] = [
 ]
 
 // Transicoes para aceitacao de Int e Float
+// a mesa é um objeto onde cada chave eh um estado com suas possiveis transicoes e
+// respectivos destinos, (o estado de rejeicao esta no codigo, ele eh atigido quando nao existir
+// transicao do estado de teste para o dado tipo do caracter)
+
 const table: TTransitionTable = {
   'q0': {
     'digit' : 'q1',
@@ -56,14 +65,14 @@ const table: TTransitionTable = {
   },
   'q2': {
     'digit': 'q3',
-    '!digit!dot': 'q6',
+    '!digit!e': 'q6',
     'e': 'q4'
   },
   'q62': {
     'digit': 'q2'
   },
   'q3': {
-    '!digit!dot': 'q6',
+    '!digit!e': 'q6',
     'digit': 'q3',
     'e': 'q4'
   },
