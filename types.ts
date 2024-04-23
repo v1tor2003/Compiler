@@ -1,18 +1,48 @@
 // Tipo/Familia de um token
 enum TokenFamily {
-  Integer,
-  Float
+  Inteiro,
+  Float,
+  End,
+  Cadeia,
+  LogicoOR,
+  LogicoAND,
+  LogicoNOT,
+  Divisao,
+  Multiplicacao,
+  Soma,
+  Subtracao,
+  Diferenca,
+  Comparacao,
+  Atribuicao,
+  Menor,
+  MenorIgual,
+  Maior,
+  MaiorIgual,
+  ComentarioBloco,
+  ComentarioLinha,
+  Data,
+  Reservada,
+  Identificador,
+  RotinaInicio,
+  RotinaFim,
+  Se,
+  Senao,
+  Imprima,
+  Leia,
+  Para,
+  Enquanto
 }
 // Estrutura de um token
 type TToken = {
-  type: string
-  value?: string
+  tokenKind: string
+  lexeme?: string
 }
 // Estrutura de um estado
 type TState = {
   key: string
   start?: boolean
   final?: boolean
+  fromWedding?: boolean
   tokenType?: TokenFamily
 }
 // Estrutura da base de comparacao de caracter
@@ -20,6 +50,13 @@ type TCharTypeMapping = {
   regex: RegExp
   type: string
 }
+
+// Estrutura de uma palavra chave
+type TKeyword = {
+  tokenType: TokenFamily
+  value: string
+}
+
 // Estrutura da mesa de transicoes
 type TTransitionTable = {
   [stateKey: string]: {
@@ -32,5 +69,6 @@ export {
   TState,
   TCharTypeMapping,
   TTransitionTable,
+  TKeyword,
   TokenFamily
 }

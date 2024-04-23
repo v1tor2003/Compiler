@@ -7,7 +7,7 @@ import { TToken } from "./types"
 */
 async function main(): Promise<void> {
   const lexer = new Lexer()
-  const tokens = await lexer.tokenize('./input.txt')
+  const tokens = await lexer.tokenize('./input.cic')
   console.log('List of recognized tokens:')
   console.log(tokens)
   const { floatCount, integerCount} = countFloatsAndIntegers(tokens)
@@ -27,9 +27,9 @@ function countFloatsAndIntegers (tokens: TToken[]):{
   let integerCount: number = 0;
 
   tokens.forEach(token => {
-    if (token.type === 'Float') 
+    if (token.tokenKind === 'Float') 
       floatCount++
-    else if (token.type === 'Integer') 
+    else if (token.tokenKind === 'Integer') 
       integerCount++
   })
 

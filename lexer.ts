@@ -4,9 +4,10 @@ import {
   TCharTypeMapping,
   TToken,
   TTransitionTable,
-  TokenFamily
+  TokenFamily,
+  TKeyword
 } from './types'
-import { charType, states as s, table } from './constants'
+import { charType, keywords as words, states as s, table } from './constants'
 
 export class Lexer {
   /**
@@ -17,6 +18,7 @@ export class Lexer {
    * @returns {} a funcao eh um construtor, inicia a classe, sem retorno.
   */
   constructor(
+    private keywords: TKeyword[] = words,
     private charTypeMappings: TCharTypeMapping[] = charType,
     private states: TState[] = s,
     private transitionTable: TTransitionTable = table
@@ -29,32 +31,42 @@ export class Lexer {
   public async tokenize(inputPath: string): Promise<TToken[]> {
     const tokens: TToken[] = [] 
     let state: TState = this.getStartState()
-
+    let rewind: boolean = false
+    let token: string = ''
+    
     let lineCounter: number = 1    
     for await (const lineFromFile of (await this.readFile(inputPath)).readLines()){
-      let colCounter: number = 1
-      let token: string = ''
       const line = lineFromFile.includes('\n') ? lineFromFile : lineFromFile + '\n'
-      for(const c of line){
-        token += c
-        state = this.nextState(state, c)
+      for(let c = 0; c < line.length; c++){
+        c = rewind ? c-1 : c
+        rewind = false
 
+        state = this.nextState(state, line[c])
         if(state.key === 'rejected'){
-          console.log(`Unrecognized Token '${this.format(token)}' at line[${lineCounter}], col[${colCounter}]`) 
+          console.log(`Unrecognized Token '${this.format(line[c])}' at line[${lineCounter}], col[${c+1}]`) 
           token = ''
           state = this.getStartState()
+          continue
         }
 
         if(state.final) {
+          let value: string
+
+          if(state.fromWedding) {
+            rewind = line[c] === '\n' ? false : true
+            value = token
+          }
+          else value = token + line[c]
+        
           tokens.push({
-            type: TokenFamily[state.tokenType as TokenFamily],
-            value: token.slice(0, -1)
+            tokenKind: state.key === 'keywords' ? TokenFamily[this.keywords.find(k => k.value === token)?.tokenType as TokenFamily] : TokenFamily[state.tokenType as TokenFamily],
+            lexeme: value
           })
 
           token = ''
           state = this.getStartState()
         }
-        colCounter++
+        token += line[c] !== '\n' ? line[c] : ''
       }
       lineCounter++
     }
@@ -84,10 +96,11 @@ export class Lexer {
   private nextState(state: TState, c: string): TState{
     for (const { regex, type } of this.charTypeMappings){
       if(!this.transitionTable[state.key][type]) continue
-      if (regex.test(c)) 
+      if (regex.test(c)) {
         return this.states.find(
           (s) => s.key === this.transitionTable[state.key][type]
         ) as TState
+      }
     }
   
     return {
