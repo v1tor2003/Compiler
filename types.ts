@@ -30,7 +30,10 @@ enum TokenFamily {
   Imprima,
   Leia,
   Para,
-  Enquanto
+  Enquanto,
+  DoisPontos,
+  AbrirParen,
+  FecharParen
 }
 // Estrutura de um token
 type TToken = {

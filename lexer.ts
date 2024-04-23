@@ -40,7 +40,6 @@ export class Lexer {
       for(let c = 0; c < line.length; c++){
         c = rewind ? c-1 : c
         rewind = false
-
         state = this.nextState(state, line[c])
         if(state.key === 'rejected'){
           console.log(`Unrecognized Token '${this.format(line[c])}' at line[${lineCounter}], col[${c+1}]`) 
@@ -48,25 +47,27 @@ export class Lexer {
           state = this.getStartState()
           continue
         }
-
-        if(state.final) {
-          let value: string
-
-          if(state.fromWedding) {
-            rewind = line[c] === '\n' ? false : true
-            value = token
-          }
-          else value = token + line[c]
         
-          tokens.push({
-            tokenKind: state.key === 'keywords' ? TokenFamily[this.keywords.find(k => k.value === token)?.tokenType as TokenFamily] : TokenFamily[state.tokenType as TokenFamily],
-            lexeme: value
-          })
-
-          token = ''
-          state = this.getStartState()
+        if(!state.final){
+          token += line[c] !== '\n' ? line[c] : ''
+          continue
         }
-        token += line[c] !== '\n' ? line[c] : ''
+
+        let value: string
+
+        if(state.fromWedding) {
+          rewind = line[c] === '\n' ? false : true
+          value = token
+        }
+        else value = token + line[c]
+        
+        tokens.push({
+          tokenKind: state.key === 'keywords' ? TokenFamily[this.keywords.find(k => k.value === token)?.tokenType as TokenFamily] : TokenFamily[state.tokenType as TokenFamily],
+          lexeme: value
+        })
+
+        token = ''
+        state = this.getStartState()
       }
       lineCounter++
     }

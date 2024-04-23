@@ -37,6 +37,9 @@ const charType: TCharTypeMapping[] = [
   { regex: /\</, type: 'less'},
   { regex: /\>/, type: 'greater'},
   { regex: /\//, type: 'slash'},
+  { regex: /\(/, type: 'openparen'},
+  { regex: /\)/, type: 'closeparen'},
+  { regex: /\:/, type: 'colon'},
   { regex: /[A-Z]/, type: 'upletter'},
   { regex: /[a-z]/, type: 'lowerletter'},
   { regex: /[0-9A-F]/, type: 'hexsymbol'},
@@ -206,6 +209,21 @@ const states: TState[] = [
     tokenType: TokenFamily.Diferenca
   },
   { 
+    key: 'q55',
+    final: true,
+    tokenType: TokenFamily.AbrirParen
+  },
+  { 
+    key: 'q58',
+    final: true,
+    tokenType: TokenFamily.FecharParen
+  },
+  { 
+    key: 'q59',
+    final: true,
+    tokenType: TokenFamily.DoisPontos
+  },
+  { 
     key: 'q54',
     final: true,
     tokenType: TokenFamily.Atribuicao
@@ -247,7 +265,10 @@ const table: TTransitionTable = {
     'ampersand': 'q51',
     'pipe': 'q52',
     'quotes': 'q56',
-    'dot' : 'q62'
+    'dot' : 'q62',
+    'openparen': 'q55',
+    'closeparen': 'q58',
+    'colon': 'q59',
   },
   'q1': {
     'digit':'q8',
@@ -398,11 +419,14 @@ const table: TTransitionTable = {
   'q50': {},
   'q51': {},
   'q52': {},
+  'q55': {},
   'q56': {
     'quotes': 'q57',
     '!endl': 'q56'
   },
   'q57': {},
+  'q58': {},
+  'q59': {},
   'q60': {
     'lowerletter': 'q60',
     'underscore': 'q60',
