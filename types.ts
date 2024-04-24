@@ -37,6 +37,8 @@ enum TokenFamily {
 type TToken = {
   tokenKind: string
   lexeme?: string
+  lin: number
+  col: number
 }
 // Estrutura de um estado
 type TState = {

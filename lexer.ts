@@ -14,8 +14,18 @@ export class Lexer {
   private static charTypeMappings: TCharTypeMapping[] = charType
   private static states: TState[] = s
   private static transitionTable: TTransitionTable = table
-  
-  constructor(private sourceCodeErrorReport: string = ''){}
+  private static canHaveLexeme: TokenFamily[] = [
+    TokenFamily.TK_INT,
+    TokenFamily.TK_FLOAT,
+    TokenFamily.TK_END,
+    TokenFamily.TK_ID,
+    TokenFamily.TK_CADEIA, 
+    TokenFamily.TK_DATA 
+  ]
+  constructor(
+    private sourceCodeErrorReport: string = '',
+    private lastErrorLine: string = '',
+  ){}
 
   /**
    * Funcao que reconhece os tokens segundo a stream de entrada vinda de um arquivo .txt.
@@ -40,14 +50,14 @@ export class Lexer {
         
         if(!state.key){
           if(/[^\n ]/.test(line[c]))
-            this.setErrorOnSource('Simbolo nao reconhecivel', lineCounter, c)
+            this.setErrorOnSource(state,token.length, lineCounter, c)
           token = ''
           state = this.getStartState()
           continue
         }
         
         if(state.err) {
-          this.setErrorOnSource(state.err.msg, lineCounter, c)
+          this.setErrorOnSource(state, token.length,lineCounter, c)
           token = ''
           state = this.getStartState()
           rewind = state.pathHadWedding ? true : false
@@ -72,9 +82,11 @@ export class Lexer {
           
           tk !== undefined ? tokens.push({
             tokenKind: tk,
-            lexeme: value
+            lexeme: this.getLexeme(tk, value),
+            lin: lineCounter,
+            col: c+1 -(value.length > 1 ? value.length : 0) 
           }) :
-          this.setErrorOnSource('Palavra reservada nao encontrada', lineCounter, c)
+          this.setErrorOnSource(state, token.length,lineCounter, c)
         }
 
         token = ''
@@ -109,7 +121,7 @@ export class Lexer {
 
       return {fileLines: fileHandler.readLines(), EOF: {posLine: linesCount, posCol: charCount}}
     } catch (error: unknown) {
-      throw new Error('Error opening file: ' + error)
+      throw new Error('Erro ao abrir arquivo: ' + error)
     }
   }
   /**
@@ -138,7 +150,7 @@ export class Lexer {
   */
   private getStartState(): TState{
     const startState: TState | undefined = Lexer.states.find(state => state.start === true) 
-    if(!startState) throw new Error('It was not possible to find the initial state of the automaton.')
+    if(!startState) throw new Error('Nao foi possivel achar o estado inicial do automato.')
     return startState
   }
   /**
@@ -147,15 +159,31 @@ export class Lexer {
    * @returns {string} a funcao retorna a string formatada
   */
   private format(c: string): string { return c.localeCompare('\n') === 0 ? '\\n' : c}
-  private isAtEndOfFIle(c: {posLine: number, posCol: number}, EOF: {posLine: number, posCol: number}): boolean {
-    return (c.posLine === EOF.posLine) && (c.posCol === EOF.posCol)
-  }
   public getSourceCodeErrors(): string {return this.sourceCodeErrorReport}
-  private setErrorOnSource(errorMsg: string, line: number, col: number): void{
+  private setErrorOnSource(state: TState, tokenSize: number,line: number, col: number): void{
+    let errorPointer: string = ''
+    const errorMsg: string | undefined = state.err?.msg  
+    const errorCol: number = errorMsg?.includes('Cadeia') ? col : col - tokenSize + 1
+    const newError: string = `   Erro linha ${line} coluna ${errorCol}: ${errorMsg ? errorMsg : 'Simbolo nao reconhecido'}\n`
+
     this.sourceCodeErrorReport += '   '
-    for(let i = 0; i < col; i++) this.sourceCodeErrorReport += '-'
-    this.sourceCodeErrorReport += '^\n'
-    this.sourceCodeErrorReport += `   Erro ${line} coluna ${col}: ${errorMsg}\n`
+    for(let i = 0; i < errorCol; i++)
+      errorPointer += '-'
+    errorPointer += '^\n'
+
+    this.sourceCodeErrorReport += errorPointer
+    
+    if(this.lastErrorLine === '') this.sourceCodeErrorReport += newError
+    if(this.lastErrorLine.includes(line.toString())){
+      this.sourceCodeErrorReport.replace(this.lastErrorLine, errorPointer)
+      this.sourceCodeErrorReport += this.lastErrorLine
+      this.sourceCodeErrorReport += newError
+    } 
+
+    this.lastErrorLine = newError
+  }
+  private getLexeme(tokenType: string, value: string): string | undefined{
+    return Lexer.canHaveLexeme.includes(TokenFamily[tokenType]) ? value : undefined
   }
 }
 

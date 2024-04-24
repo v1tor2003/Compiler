@@ -1,4 +1,5 @@
 import { Lexer } from "./lexer"
+import { countTokenOccurrence, formatTokensAsTable } from "./utils"
 import { TToken } from "./types"
 
 // Script cliente para classe lexica
@@ -7,34 +8,21 @@ import { TToken } from "./types"
 */
 async function main(): Promise<void> {
   const lexer = new Lexer()
-  const tokens = await lexer.tokenize('./input.cic')
+  const tokens: TToken[] = await lexer.tokenize('./input.cic')
   console.log(lexer.getSourceCodeErrors())
-  console.log('List of recognized tokens:')
-  console.log(tokens)
-  const { floatCount, integerCount} = countFloatsAndIntegers(tokens)
-  console.log('Total of Integer Tokens:', integerCount)
-  console.log('Total of FLoat Tokens:', floatCount)
-}
-/**
-  * Funcao que conta a ocorrencia de tokens Inteiros e Float
-  * @param {TToken[]} tokens lista de tokens gerados pelo lexer
-  * @returns {floatCount: number, integerCount: number} soma individual de tokens float e int 
-*/
-function countFloatsAndIntegers (tokens: TToken[]):{
-  floatCount: number,
-  integerCount: number
-} {
-  let floatCount: number = 0;
-  let integerCount: number = 0;
 
-  tokens.forEach(token => {
-    if (token.tokenKind === 'Float') 
-      floatCount++
-    else if (token.tokenKind === 'Integer') 
-      integerCount++
-  })
-
-  return { floatCount, integerCount }
+  console.log('Lista de tokens reconhecidos:')  
+  console.table(formatTokensAsTable(tokens))
+  console.log('Lista de uso dos tokens:')
+  console.table(
+    countTokenOccurrence(tokens)
+    .sort((a, b) => b.count - a.count)
+    .map(({tk, count}) => ({ TOKEN: tk, USOS: count }))
+  )
+  
+  
+  // gonna save to a excel file for better readbility
+  //formatTransiontionTable(table)
 }
 
 main()
