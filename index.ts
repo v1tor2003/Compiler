@@ -9,10 +9,13 @@ import { TToken } from "./types"
 async function main(): Promise<void> {
   const lexer = new Lexer()
   const tokens: TToken[] = await lexer.tokenize('./input.cic')
+
+  console.log('Analise de linhas no codigo fonte:')  
   console.log(lexer.getSourceCodeErrors())
 
   console.log('Lista de tokens reconhecidos:')  
   console.table(formatTokensAsTable(tokens))
+  
   console.log('Lista de uso dos tokens:')
   console.table(
     countTokenOccurrence(tokens)

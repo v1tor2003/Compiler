@@ -34,12 +34,13 @@ export class Lexer {
   */
   public async tokenize(inputPath: string): Promise<TToken[]> {
     const tokens: TToken[] = [] 
-    let state: TState = this.getStartState()
+    const {fileLines, EOF} = (await this.readFile(inputPath))
     let rewind: boolean = false
     let token: string = ''
-    const {fileLines, EOF} = (await this.readFile(inputPath))
     
-    let lineCounter: number = 1    
+    let lineCounter: number = 1
+    let state: TState = this.getStartState()
+
     for await (const fileLine of fileLines){
       const line = fileLine.includes('\n') ? fileLine : fileLine + '\n'
       this.sourceCodeErrorReport += `[${lineCounter}] ${line}`
@@ -63,8 +64,12 @@ export class Lexer {
           rewind = state.pathHadWedding ? true : false
           continue
         }
-
+        
         if(!state.final){
+          if(lineCounter === EOF.posLine && c === EOF.posCol){
+            state = this.nextState(state, '$')
+            this.setErrorOnSource(state, 0, lineCounter, c)
+          }
           token += line[c] !== '\n' ? line[c] : ''
           continue
         }
@@ -162,9 +167,10 @@ export class Lexer {
   public getSourceCodeErrors(): string {return this.sourceCodeErrorReport}
   private setErrorOnSource(state: TState, tokenSize: number,line: number, col: number): void{
     let errorPointer: string = ''
-    const errorMsg: string | undefined = state.err?.msg  
+    const errorMsg: string | undefined = state.err?.msg 
     const errorCol: number = errorMsg?.includes('Cadeia') ? col : col - tokenSize + 1
-    const newError: string = `   Erro linha ${line} coluna ${errorCol}: ${errorMsg ? errorMsg : 'Simbolo nao reconhecido'}\n`
+    const newError: string = 
+    `   Erro linha ${line} coluna ${errorCol}: ${errorMsg ? errorMsg : 'Simbolo nao reconhecido'}\n`
 
     this.sourceCodeErrorReport += '   '
     for(let i = 0; i < errorCol; i++)

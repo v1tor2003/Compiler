@@ -41,12 +41,14 @@ const charType: TCharTypeMapping[] = [
   { regex: /[^/]/, type: '!slash'},
   { regex: /\(/, type: 'openparen'},
   { regex: /\)/, type: 'closeparen'},
+  { regex: /\$/, type: '$'},
   { regex: /\:/, type: 'colon'},
   { regex: /[A-Z]/, type: 'upletter'},
   { regex: /[a-z]/, type: 'lowerletter'},
   { regex: /[0-9A-F]/, type: 'hexsymbol'},
   { regex: /[^0-9A-F]/, type: '!hexsymbol'},
   { regex: /[^>]/, type: '!greater'},
+  { regex: /[^>$]/, type: '!greater!$'},
   { regex: /\=/, type: 'equals'},
   { regex: /\#/, type: 'hashtag'},
   { regex: /\x/, type: 'x'},
@@ -246,28 +248,28 @@ const states: TState[] = [
     key: 'q63',
     final: true,
     err: {
-      msg: 'Cadeia não fechada'
+      msg: 'Cadeia nao fechada.'
     }
   },
   { 
     key: 'q64',
     final: true,
     err: {
-      msg: 'Data mal formada'
+      msg: 'Data mal formada.'
     }
   },
   { 
     key: 'q65',
     final: true,
     err: {
-      msg: 'Idenficador mal formado'
+      msg: 'Idenficador mal formado.'
     }
   },
   { 
     key: 'q66',
     final: true,
     err: {
-      msg: 'Bloco de comentario nao concluido'
+      msg: 'Bloco de comentario nao concluido.'
     }
   },
   { 
@@ -441,16 +443,19 @@ const table: TTransitionTable = {
     'less': 'q42'
   },
   'q42': {
-    '!greater': 'q42',
-    'greater': 'q43'
+    '!greater!$': 'q42',
+    'greater': 'q43',
+    '$': 'q66'
   },
   'q43':{
-    '!greater': 'q42',
-    'greater': 'q44'
+    '!greater!$': 'q42',
+    'greater': 'q44',
+    '$': 'q66'
   },
   'q44': {
-    '!greater': 'q42',
-    'greater': 'q45'
+    '!greater!$': 'q42',
+    'greater': 'q45',
+    '$': 'q66'
   },
   'q45': {},
   'q46': {},
