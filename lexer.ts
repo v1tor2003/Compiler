@@ -10,19 +10,13 @@ import {
 import { charType, keywords as words, states as s, table } from './constants'
 
 export class Lexer {
-  /**
-   * Inicia a classe lexica com as constantes importadas do arquivo de constantes.
-   * @param {TCharTypeMapping[]} charTypeMappings array de regex e seu tipo
-   * @param {TState[]} states estados do automato !! DEVE HAVER UM ESTADO INICIAL !!
-   * @param {TTransitionTable} transitionTable mesa de transicao de modo que estado: {symbolo -> proxEstado}
-   * @returns {} a funcao eh um construtor, inicia a classe, sem retorno.
-  */
-  constructor(
-    private keywords: TKeyword[] = words,
-    private charTypeMappings: TCharTypeMapping[] = charType,
-    private states: TState[] = s,
-    private transitionTable: TTransitionTable = table
-  ){}
+  private static keywords: TKeyword[] = words
+  private static charTypeMappings: TCharTypeMapping[] = charType
+  private static states: TState[] = s
+  private static transitionTable: TTransitionTable = table
+  
+  constructor(private sourceCodeErrorReport: string = ''){}
+
   /**
    * Funcao que reconhece os tokens segundo a stream de entrada vinda de um arquivo .txt.
    * @param {string} inputPath caminho para o arquivo
@@ -33,38 +27,55 @@ export class Lexer {
     let state: TState = this.getStartState()
     let rewind: boolean = false
     let token: string = ''
+    const {fileLines, EOF} = (await this.readFile(inputPath))
     
     let lineCounter: number = 1    
-    for await (const lineFromFile of (await this.readFile(inputPath)).readLines()){
-      const line = lineFromFile.includes('\n') ? lineFromFile : lineFromFile + '\n'
+    for await (const fileLine of fileLines){
+      const line = fileLine.includes('\n') ? fileLine : fileLine + '\n'
+      this.sourceCodeErrorReport += `[${lineCounter}] ${line}`
       for(let c = 0; c < line.length; c++){
         c = rewind ? c-1 : c
         rewind = false
         state = this.nextState(state, line[c])
-        if(state.key === 'rejected'){
-          console.log(`Unrecognized Token '${this.format(line[c])}' at line[${lineCounter}], col[${c+1}]`) 
+        
+        if(!state.key){
+          if(/[^\n ]/.test(line[c]))
+            this.setErrorOnSource('Simbolo nao reconhecivel', lineCounter, c)
           token = ''
           state = this.getStartState()
           continue
         }
         
+        if(state.err) {
+          this.setErrorOnSource(state.err.msg, lineCounter, c)
+          token = ''
+          state = this.getStartState()
+          rewind = state.pathHadWedding ? true : false
+          continue
+        }
+
         if(!state.final){
           token += line[c] !== '\n' ? line[c] : ''
           continue
         }
-
+        // passou por todos estados, ta no final    
         let value: string
 
-        if(state.fromWedding) {
-          rewind = line[c] === '\n' ? false : true
+        if(state.pathHadWedding) {
+          rewind = line[c] === '\n' ?  false :true
           value = token
         }
         else value = token + line[c]
         
-        tokens.push({
-          tokenKind: state.key === 'keywords' ? TokenFamily[this.keywords.find(k => k.value === token)?.tokenType as TokenFamily] : TokenFamily[state.tokenType as TokenFamily],
-          lexeme: value
-        })
+        if(state.tokenType !== undefined) {
+          let tk = (state.tokenType === TokenFamily.TK_RESERVADA) ? TokenFamily[Lexer.keywords.find(k => k.value === token)?.tokenType as TokenFamily] : TokenFamily[state.tokenType as TokenFamily]
+          
+          tk !== undefined ? tokens.push({
+            tokenKind: tk,
+            lexeme: value
+          }) :
+          this.setErrorOnSource('Palavra reservada nao encontrada', lineCounter, c)
+        }
 
         token = ''
         state = this.getStartState()
@@ -79,9 +90,24 @@ export class Lexer {
    * @param {string} path caminho do arquivo
    * @returns {Promise<fsPromises.FileHandle>} a funcao retorna um handler para o arquivo 
   */
-  private async readFile(path: string): Promise<fsPromises.FileHandle> {
+  private async readFile(path: string): Promise<{fileLines: AsyncIterable<string>, EOF: {posLine: number, posCol: number}}> {
     try {
-      return await fsPromises.open(path, 'r');
+      const counterHandler = await fsPromises.open(path, 'r');
+      const linesOfFile = counterHandler.readLines()
+      
+      let linesCount: number = 0
+      let charCount: number = 0
+      for await(const l of linesOfFile){
+        linesCount++
+        charCount = 0
+        for(const c of l)
+          charCount++
+      }
+
+      await counterHandler.close();
+      const fileHandler = await fsPromises.open(path, 'r');
+
+      return {fileLines: fileHandler.readLines(), EOF: {posLine: linesCount, posCol: charCount}}
     } catch (error: unknown) {
       throw new Error('Error opening file: ' + error)
     }
@@ -95,33 +121,41 @@ export class Lexer {
    * @returns {TState} a funcao retorna o proximo estado
   */
   private nextState(state: TState, c: string): TState{
-    for (const { regex, type } of this.charTypeMappings){
-      if(!this.transitionTable[state.key][type]) continue
+    for (const { regex, type } of Lexer.charTypeMappings){
+      if(!Lexer.transitionTable[state.key][type]) continue
       if (regex.test(c)) {
-        return this.states.find(
-          (s) => s.key === this.transitionTable[state.key][type]
+        return Lexer.states.find(
+          (s) => s.key === Lexer.transitionTable[state.key][type]
         ) as TState
       }
     }
   
-    return {
-      key: 'rejected'
-    }
+    return { key: '' }
   }
   /**
    * Funcao acha na lista de estados, o incial, caso nao exista tal estado ela dispara um erro.
    * @returns {TState} a funcao retorna o estado inicial do automato
   */
   private getStartState(): TState{
-    const startState: TState | undefined = this.states.find(state => state.start === true) 
+    const startState: TState | undefined = Lexer.states.find(state => state.start === true) 
     if(!startState) throw new Error('It was not possible to find the initial state of the automaton.')
     return startState
   }
   /**
    * Formata string, se o caracter for '\n', mostra como caracter nao como a quebra de linha
-   * @param {string} str string para teste
+   * @param {string} c caracter para teste
    * @returns {string} a funcao retorna a string formatada
   */
-  private format(str: string): string { return str.localeCompare('\n') === 0 ? '\\n' : str}
+  private format(c: string): string { return c.localeCompare('\n') === 0 ? '\\n' : c}
+  private isAtEndOfFIle(c: {posLine: number, posCol: number}, EOF: {posLine: number, posCol: number}): boolean {
+    return (c.posLine === EOF.posLine) && (c.posCol === EOF.posCol)
+  }
+  public getSourceCodeErrors(): string {return this.sourceCodeErrorReport}
+  private setErrorOnSource(errorMsg: string, line: number, col: number): void{
+    this.sourceCodeErrorReport += '   '
+    for(let i = 0; i < col; i++) this.sourceCodeErrorReport += '-'
+    this.sourceCodeErrorReport += '^\n'
+    this.sourceCodeErrorReport += `   Erro ${line} coluna ${col}: ${errorMsg}\n`
+  }
 }
 

@@ -1,39 +1,37 @@
 // Tipo/Familia de um token
 enum TokenFamily {
-  Inteiro,
-  Float,
-  End,
-  Cadeia,
-  LogicoOR,
-  LogicoAND,
-  LogicoNOT,
-  Divisao,
-  Multiplicacao,
-  Soma,
-  Subtracao,
-  Diferenca,
-  Comparacao,
-  Atribuicao,
-  Menor,
-  MenorIgual,
-  Maior,
-  MaiorIgual,
-  ComentarioBloco,
-  ComentarioLinha,
-  Data,
-  Reservada,
-  Identificador,
-  RotinaInicio,
-  RotinaFim,
-  Se,
-  Senao,
-  Imprima,
-  Leia,
-  Para,
-  Enquanto,
-  DoisPontos,
-  AbrirParen,
-  FecharParen
+  TK_INT,
+  TK_FLOAT,
+  TK_END,
+  TK_CADEIA,
+  TK_OR,
+  TK_AND,
+  TK_NOT,
+  TK_DIV,
+  TK_MULT,
+  TK_MAIS,
+  TK_MENOS,
+  TK_DIF,
+  TK_COMP,
+  TK_ATRIB,
+  TK_MENOR,
+  TK_MENOR_IGUAL,
+  TK_MAIOR,
+  TK_MAIOR_IGUAL,
+  TK_DATA,
+  TK_RESERVADA,
+  TK_ID,
+  TK_ROTINA,
+  TK_FIM_ROTINA,
+  TK_SE,
+  TK_SENAO,
+  TK_IMPRIMA,
+  TK_LEIA,
+  TK_PARA,
+  TK_ENQUANTO,
+  TK_DOIS_PONTOS,
+  TK_ABRE_PAR,
+  TK_FECHA_PAR
 }
 // Estrutura de um token
 type TToken = {
@@ -45,7 +43,10 @@ type TState = {
   key: string
   start?: boolean
   final?: boolean
-  fromWedding?: boolean
+  pathHadWedding?: boolean
+  err?: {
+    msg: string
+  } | undefined
   tokenType?: TokenFamily
 }
 // Estrutura da base de comparacao de caracter

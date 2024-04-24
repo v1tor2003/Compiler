@@ -8,6 +8,7 @@ import { TToken } from "./types"
 async function main(): Promise<void> {
   const lexer = new Lexer()
   const tokens = await lexer.tokenize('./input.cic')
+  console.log(lexer.getSourceCodeErrors())
   console.log('List of recognized tokens:')
   console.log(tokens)
   const { floatCount, integerCount} = countFloatsAndIntegers(tokens)

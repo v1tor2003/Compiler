@@ -7,14 +7,14 @@ import {
 } from "./types"
 // Palavras reservadas da linguagem definidas nas intrucoes do classroom
 const keywords: TKeyword[] = [
-  { tokenType: TokenFamily.RotinaInicio, value: 'rotina' },
-  { tokenType: TokenFamily.RotinaFim, value: 'fim_rotina' },
-  { tokenType: TokenFamily.Se, value: 'se' },
-  { tokenType: TokenFamily.Senao, value: 'senao' },
-  { tokenType: TokenFamily.Imprima, value: 'imprima' },
-  { tokenType: TokenFamily.Leia, value: 'leia' },
-  { tokenType: TokenFamily.Para, value: 'para' },
-  { tokenType: TokenFamily.Enquanto, value: 'enquanto' },
+  { tokenType: TokenFamily.TK_ROTINA, value: 'rotina' },
+  { tokenType: TokenFamily.TK_FIM_ROTINA, value: 'fim_rotina' },
+  { tokenType: TokenFamily.TK_SE, value: 'se' },
+  { tokenType: TokenFamily.TK_SENAO, value: 'senao' },
+  { tokenType: TokenFamily.TK_IMPRIMA, value: 'imprima' },
+  { tokenType: TokenFamily.TK_LEIA, value: 'leia' },
+  { tokenType: TokenFamily.TK_PARA, value: 'para' },
+  { tokenType: TokenFamily.TK_ENQUANTO, value: 'enquanto' },
 ] 
 
 // Base de comparacao do tipo de caracter
@@ -26,6 +26,7 @@ const charType: TCharTypeMapping[] = [
   { regex: /[^.]/, type: '!dot'},
   { regex: /\e/, type: 'e' },
   { regex: /\_/, type: 'underscore' },
+  { regex: /[^_]/, type: '!underscore'},
   { regex: /\"/, type: 'quotes'},
   { regex: /\|/, type: 'pipe'},
   { regex: /\&/, type: 'ampersand'},
@@ -37,6 +38,7 @@ const charType: TCharTypeMapping[] = [
   { regex: /\</, type: 'less'},
   { regex: /\>/, type: 'greater'},
   { regex: /\//, type: 'slash'},
+  { regex: /[^/]/, type: '!slash'},
   { regex: /\(/, type: 'openparen'},
   { regex: /\)/, type: 'closeparen'},
   { regex: /\:/, type: 'colon'},
@@ -76,8 +78,8 @@ const states: TState[] = [
   {
     key: 'q6',
     final: true,
-    fromWedding: true,
-    tokenType: TokenFamily.Float
+    pathHadWedding: true,
+    tokenType: TokenFamily.TK_FLOAT
   },
   { key: 'q7' },
   { key: 'q8' },
@@ -86,16 +88,16 @@ const states: TState[] = [
   {
     key: 'q11',
     final: true,
-    fromWedding: true,
-    tokenType: TokenFamily.Inteiro
+    pathHadWedding: true,
+    tokenType: TokenFamily.TK_INT
   },
   { key: 'q12' },
   { key: 'q13' },
   { 
     key: 'q14',
     final: true,
-    fromWedding: true,
-    tokenType: TokenFamily.End
+    pathHadWedding: true,
+    tokenType: TokenFamily.TK_END
   },
   { key: 'q15' },
   { key: 'q16' },
@@ -107,7 +109,7 @@ const states: TState[] = [
   { 
     key: 'q22' ,
     final: true,
-    tokenType: TokenFamily.Data
+    tokenType: TokenFamily.TK_DATA
   },
   { key: 'q23' },
   { key: 'q24' },
@@ -115,49 +117,48 @@ const states: TState[] = [
   { 
     key:'q26', 
     final: true,
-    tokenType: TokenFamily.MaiorIgual
+    tokenType: TokenFamily.TK_MAIOR_IGUAL
   },
   { key:'q27' },
   { 
     key:'q28',  
     final: true,
-    fromWedding: true,
-    tokenType: TokenFamily.Maior
+    pathHadWedding: true,
+    tokenType: TokenFamily.TK_MAIOR
   },
   { key: 'q29'},
   { key: 'q30'},
   { 
     key: 'q31',
     final: true,
-    fromWedding: true,
-    tokenType: TokenFamily.Identificador
+    pathHadWedding: true,
+    tokenType: TokenFamily.TK_ID
   },
   { key: 'q32' },
   { key: 'q33' },
   {
     key: 'q34',
     final: true,
-    tokenType: TokenFamily.Comparacao
+    tokenType: TokenFamily.TK_COMP
   },
   { key:'q35' },
   { 
     key:'q36',
     final: true,
-    tokenType: TokenFamily.ComentarioLinha
   },
   { key: 'q37'},
   { key: 'q38'},
   { 
     key: 'q39',
     final: true,
-    fromWedding: true,
-    tokenType: TokenFamily.MenorIgual
+    pathHadWedding: true,
+    tokenType: TokenFamily.TK_MENOR_IGUAL
   },
   { 
     key: 'q40',
     final: true,
-    fromWedding: true,
-    tokenType: TokenFamily.Menor
+    pathHadWedding: true,
+    tokenType: TokenFamily.TK_MENOR
   },
   { key: 'q41'},
   { key: 'q42'},
@@ -166,87 +167,117 @@ const states: TState[] = [
   { 
     key: 'q45',
     final: true,
-    tokenType: TokenFamily.ComentarioBloco
   },
   { 
     key: 'q46',
     final: true,
-    tokenType: TokenFamily.Subtracao
+    tokenType: TokenFamily.TK_MENOS
   },
   { 
     key: 'q47',
     final: true,
-    tokenType: TokenFamily.Soma
+    tokenType: TokenFamily.TK_MAIS
   },
   { 
     key: 'q48',
     final: true,
-    tokenType: TokenFamily.LogicoNOT
+    tokenType: TokenFamily.TK_NOT
   },
   { 
     key: 'q49',
     final: true,
-    tokenType: TokenFamily.Multiplicacao
+    tokenType: TokenFamily.TK_MULT
   },
   { 
     key: 'q50',
     final: true,
-    tokenType: TokenFamily.Divisao
+    tokenType: TokenFamily.TK_DIV
   },
   { 
     key: 'q51',
     final: true,
-    tokenType: TokenFamily.LogicoAND
+    tokenType: TokenFamily.TK_AND
   },
   { 
     key: 'q52',
     final: true,
-    tokenType: TokenFamily.LogicoOR
+    tokenType: TokenFamily.TK_OR
   },
   { 
     key: 'q53',
     final: true,
-    tokenType: TokenFamily.Diferenca
-  },
-  { 
-    key: 'q55',
-    final: true,
-    tokenType: TokenFamily.AbrirParen
-  },
-  { 
-    key: 'q58',
-    final: true,
-    tokenType: TokenFamily.FecharParen
-  },
-  { 
-    key: 'q59',
-    final: true,
-    tokenType: TokenFamily.DoisPontos
+    tokenType: TokenFamily.TK_DIF
   },
   { 
     key: 'q54',
     final: true,
-    tokenType: TokenFamily.Atribuicao
+    tokenType: TokenFamily.TK_ATRIB
+  },
+  { 
+    key: 'q55',
+    final: true,
+    tokenType: TokenFamily.TK_ABRE_PAR
   },
   { key: 'q56'},
   { 
     key: 'q57',
     final: true,
-    tokenType: TokenFamily.Cadeia
+    tokenType: TokenFamily.TK_CADEIA
+  },
+  { 
+    key: 'q58',
+    final: true,
+    tokenType: TokenFamily.TK_FECHA_PAR
+  },
+  { 
+    key: 'q59',
+    final: true,
+    tokenType: TokenFamily.TK_DOIS_PONTOS
   },
   { key: 'q60'},
   { 
     key: 'keywords',
     final: true,
-    fromWedding: true,
-    tokenType: TokenFamily.Reservada
+    pathHadWedding: true,
+    tokenType: TokenFamily.TK_RESERVADA
   },
-  { key: 'q62'}
+  { key: 'q62'},
+  { 
+    key: 'q63',
+    final: true,
+    err: {
+      msg: 'Cadeia não fechada'
+    }
+  },
+  { 
+    key: 'q64',
+    final: true,
+    err: {
+      msg: 'Data mal formada'
+    }
+  },
+  { 
+    key: 'q65',
+    final: true,
+    err: {
+      msg: 'Idenficador mal formado'
+    }
+  },
+  { 
+    key: 'q66',
+    final: true,
+    err: {
+      msg: 'Bloco de comentario nao concluido'
+    }
+  },
+  { 
+    key: 'q67'
+  }
 ]
 
 // Transicoes para aceitacao de Int e Float
 // a mesa é um objeto onde cada chave eh um estado com suas possiveis transicoes e
-// respectivos destinos, (o estado de rejeicao esta no codigo, ele eh atigido quando nao existir
+// respectivos destinos, (o estado de rejeicao é uma estado de chave vazia, ele eh atigido quando nao existir
 // transicao do estado de teste para o dado tipo do caracter)
 
 const table: TTransitionTable = {
@@ -269,6 +300,7 @@ const table: TTransitionTable = {
     'openparen': 'q55',
     'closeparen': 'q58',
     'colon': 'q59',
+    'hexsymbol': 'q67'
   },
   'q1': {
     'digit':'q8',
@@ -333,19 +365,24 @@ const table: TTransitionTable = {
     'digit': 'q17'
   },
   'q17': {
-    'underscore': 'q18'
+    'underscore': 'q18',
+    '!underscore': 'q64'
   },
   'q18': {
-    'digit': 'q19'
+    'digit': 'q19',
+    '!digit': 'q64'
   },
   'q19': {
-    'digit': 'q20'
+    'digit': 'q20',
+    '!digit': 'q64'
   },
   'q20': {
-    'digit': 'q21'
+    'digit': 'q21',
+    '!digit': 'q64'
   },
   'q21': {
-    'digit': 'q22'
+    'digit': 'q22',
+    '!digit': 'q64'
   },
   'q22': {},
   'q23': {
@@ -355,7 +392,8 @@ const table: TTransitionTable = {
     'digit': 'q25'
   },
   'q25': {
-    'slash': 'q18'
+    'slash': 'q18',
+    '!slash': 'q64'
   },
   'q26': {},
   'q27': {
@@ -366,12 +404,15 @@ const table: TTransitionTable = {
   'q29': {
     'lowerletter': 'q60',
     'upletter': 'q30',
+    '!lowerletter!upletter': 'q65'
   },
   'q30': {
     'lowerletter': 'q32',
+    'upletter': 'q65',
     '!lowerletter!upletter': 'q31'
   },
   'q32': {
+    'lowerletter': 'q65',
     'upletter': 'q30',
     '!lowerletter!upletter': 'q31'
   },
@@ -422,6 +463,7 @@ const table: TTransitionTable = {
   'q55': {},
   'q56': {
     'quotes': 'q57',
+    'endl': 'q63',
     '!endl': 'q56'
   },
   'q57': {},
@@ -431,6 +473,9 @@ const table: TTransitionTable = {
     'lowerletter': 'q60',
     'underscore': 'q60',
     '!lowerletter!underscore': 'keywords',
+  },
+  'q67': {
+    'x': 'q12',
   },
 }
 
