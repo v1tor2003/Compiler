@@ -1,4 +1,7 @@
 import { TToken, TTransitionTable } from "./types"
+import { Console } from "console" // para manipulacao do stdout
+import { Transform } from "stream" // para manipular a stream de string na montagem da tabela
+import * as ExcelJS from 'exceljs'  // biblioteca para transformar de obj para planilha a mesa de transicoes
 
 /**
   * Funcao que conta a ocorrencia de tokens
@@ -48,39 +51,63 @@ function formatTokensAsTable(tokens: TToken[]): {
       }
     })
 }
-
-// IN PROGRESS
-function formatTransiontionTable(table: TTransitionTable): string {
-   // Get all the states and symbols(transitions) with no duplications
+/**
+  * Funcao que formata o .table do console para remover a coluna padrao (index)
+  * @param {any[]} input lista de objetos
+  * @returns {void} manipula o stream no stdout, sem retorno
+*/
+function printAsTable(input: any[]): void{
+  const ts = new Transform({ transform(chunk, enc, cb) { cb(null, chunk) } })
+  const logger = new Console({ stdout: ts })
+  logger.table(input)
+  const table = (ts.read() || '').toString()
+  let result = '';
+  for (let row of table.split(/[\r\n]+/)) {
+    let r = row.replace(/[^┬]*┬/, '┌');
+    r = r.replace(/^├─*┼/, '├');
+    r = r.replace(/│[^│]*/, '');
+    r = r.replace(/^└─*┴/, '└');
+    r = r.replace(/'/g, ' ');
+    result += `${r}\n`;
+  }
+  console.log(result);
+}
+/**
+  * Funcao que salva a tabela de transicoes para o .xlsx (planilha)
+  * @param {TTransitionTable} table mesa de transicoes do automato
+  * @param {string} path caminho para o salvar o arquivo
+  * @returns {Promise<void>} promessa vazia, pois o chamador deve esperar ela terminar para seguir
+*/
+async function saveAsExcelTransitionTable(table: TTransitionTable, path: string): Promise<void>{
+  const workbook = new ExcelJS.Workbook()
+  const worksheet = workbook.addWorksheet('Transition Table')
   const states = Object.keys(table)
-  let symbols = [];
-  for (const state in table) {
-    for (const symbol in table[state]) {
-      if (symbols.indexOf(symbol) === -1) {
-        symbols.push(symbol);
-      }
+  let transitions = []
+  
+  for(const state in table){
+    for(const transition in table[state]){
+      if(transitions.indexOf(transition) === -1) transitions.push(transition)
     }
   }
-  // header
-  let tableStr = ' '.padEnd(5) + symbols.map(symbol => symbol.padEnd(12)).join('');
- 
-  for (const state of states) {
-    // add state to line
-    tableStr += '\n' + state.padEnd(4) + ' '
- 
-    // Set resultState on table for state(trasition) => resultState
-    // If there is no resultState we set - in the table
-    for (const symbol of symbols) {
-      const nextState = table[state][symbol] || '-'
-      tableStr += nextState.padEnd(12)
-    }
-   }
- 
-  return tableStr
+    
+  const header = worksheet.addRow(['s/t', ...transitions])
+
+  states.forEach(state => {
+    const row = worksheet.addRow([state, ...transitions.map(transition => table[state][transition] || ' ')])
+  })
+
+  try{
+    await workbook.xlsx.writeFile(path)
+    console.log(`Tabela de transicao salva em ${path}`)
+  }catch(error){
+    console.error('Erro ao salvar tabela de transicao', error)
+  }
+
 }
 
 export {
-  formatTransiontionTable,
   countTokenOccurrence,
-  formatTokensAsTable
+  formatTokensAsTable,
+  printAsTable,
+  saveAsExcelTransitionTable
 }

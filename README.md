@@ -1,24 +1,27 @@
-# Compilador para Linguagem da Prof. Jaqc
-
-RECONHECE Inteiro e Float
-
+# Analisador Léxico para linguagem cic_2024.1
+Projeto da materia compiladores que consiste na construção de uma analizador léxico para um linguaguem de progração fictícia, etapa existente em um compilador de uma linguagem real.
 Instruções para rodar o projeto: 
 
 Requisitos:
-- node.js (preferência maior que v18)
-- typescript (preferência maior que v5)
+- Node.js (>= v18)
+- TypeScript (>= v5)
 
-Passos:
-1. clone o repositorio "git clone https://github.com/v1tor2003/Compiler.git"
-2. cd compiler 
-3. npm install 
-4. npm install typescript --save-dev (se não tiver ts já instalado na máquina)
-5. tsc index.ts
-6. node index.js
+I - Pelo git:
+  1. abra o terminal
+  2. clone o repositorio "git clone https://github.com/v1tor2003/Compiler.git"
+  3. cd compiler 
+  4. npm install 
+  5. npm install typescript --save-dev (se não tiver ts já instalado na máquina)
+  6. tsc
+  7. node src/index.js entrada.cic
 
+II - Pelo arquivo do projeto:
+  1. descompacte a pasta
+  2. dentro da pasta descompactada
+  3. crie um novo terminal
+  4. node src/index.js entrada.cic
+  
 Instruções para arquivo de entrada:
 
-O arquivo deve se encontrar com a extensao .txt
-
-Cada token (Inteiro ou Float) deve ser terminado com um caracter nao digito, ex:
-1234a 1234'\n' 1234, 1234. 1234' '
+O arquivo deve se encontrar com a extensao .cic e deve ser passado na chamada do script, ex:
+node src/index.js input.cic

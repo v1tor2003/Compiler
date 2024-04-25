@@ -1,6 +1,7 @@
 import { Lexer } from "./lexer"
-import { countTokenOccurrence, formatTokensAsTable } from "./utils"
+import { countTokenOccurrence, formatTokensAsTable, printAsTable, saveAsExcelTransitionTable } from "./utils"
 import { TToken } from "./types"
+import { table } from "./constants"
 
 // Script cliente para classe lexica
 /**
@@ -8,24 +9,26 @@ import { TToken } from "./types"
 */
 async function main(): Promise<void> {
   const lexer = new Lexer()
-  const tokens: TToken[] = await lexer.tokenize('./input.cic')
+  const input: string = process.argv.slice(2)[0]
+  if(!input) throw new Error('Nenhum arquivo de entrada informado.')
+
+  const tokens: TToken[] = await lexer.tokenize(input)
 
   console.log('Analise de linhas no codigo fonte:')  
   console.log(lexer.getSourceCodeErrors())
 
   console.log('Lista de tokens reconhecidos:')  
-  console.table(formatTokensAsTable(tokens))
-  
+  printAsTable(formatTokensAsTable(tokens))
+  // Lista de uso ordenada por ordem decrescente
   console.log('Lista de uso dos tokens:')
-  console.table(
+  printAsTable(
     countTokenOccurrence(tokens)
     .sort((a, b) => b.count - a.count)
     .map(({tk, count}) => ({ TOKEN: tk, USOS: count }))
   )
-  
-  
-  // gonna save to a excel file for better readbility
-  //formatTransiontionTable(table)
+  // salva tabela de transicao para um arquivo .xlsx
+  // se o arquivo nao existir ele eh criado, se nao eh substituido
+  await saveAsExcelTransitionTable(table, 'transition_table.xlsx')
 }
 
 main()

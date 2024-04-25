@@ -238,7 +238,7 @@ const states: TState[] = [
   },
   { key: 'q60'},
   { 
-    key: 'keywords',
+    key: 'q61',
     final: true,
     pathHadWedding: true,
     tokenType: TokenFamily.TK_RESERVADA
@@ -248,6 +248,7 @@ const states: TState[] = [
     key: 'q63',
     final: true,
     err: {
+      err_str: true,
       msg: 'Cadeia nao fechada.'
     }
   },
@@ -272,12 +273,10 @@ const states: TState[] = [
       msg: 'Bloco de comentario nao concluido.'
     }
   },
-  { 
-    key: 'q67'
-  }
+  {  key: 'q67' }
 ]
 
-// Transicoes para aceitacao de Int e Float
+// Transicoes para aceitacao dos tokens
 // a mesa é um objeto onde cada chave eh um estado com suas possiveis transicoes e
 // respectivos destinos, (o estado de rejeicao é uma estado de chave vazia, ele eh atigido quando nao existir
 // transicao do estado de teste para o dado tipo do caracter)
@@ -314,9 +313,6 @@ const table: TTransitionTable = {
     'digit': 'q3',
     '!digit!e': 'q6',
     'e': 'q4'
-  },
-  'q62': {
-    'digit': 'q2'
   },
   'q3': {
     '!digit!e': 'q6',
@@ -413,6 +409,7 @@ const table: TTransitionTable = {
     'upletter': 'q65',
     '!lowerletter!upletter': 'q31'
   },
+  'q31': {},
   'q32': {
     'lowerletter': 'q65',
     'upletter': 'q30',
@@ -465,6 +462,8 @@ const table: TTransitionTable = {
   'q50': {},
   'q51': {},
   'q52': {},
+  'q53': {},
+  'q54': {},
   'q55': {},
   'q56': {
     'quotes': 'q57',
@@ -477,8 +476,16 @@ const table: TTransitionTable = {
   'q60': {
     'lowerletter': 'q60',
     'underscore': 'q60',
-    '!lowerletter!underscore': 'keywords',
+    '!lowerletter!underscore': 'q61',
   },
+  'q61': {},
+  'q62': {
+    'digit': 'q2'
+  },
+  'q63': {},
+  'q64': {},
+  'q65': {},
+  'q66': {},
   'q67': {
     'x': 'q12',
   },

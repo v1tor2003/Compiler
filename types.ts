@@ -47,6 +47,7 @@ type TState = {
   final?: boolean
   pathHadWedding?: boolean
   err?: {
+    err_str?: boolean
     msg: string
   } | undefined
   tokenType?: TokenFamily

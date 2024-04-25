@@ -8,7 +8,7 @@ import {
   TKeyword
 } from './types'
 import { charType, keywords as words, states as s, table } from './constants'
-
+// Definicao class lexica (geradora de tokens)
 export class Lexer {
   private static keywords: TKeyword[] = words
   private static charTypeMappings: TCharTypeMapping[] = charType
@@ -24,11 +24,13 @@ export class Lexer {
   ]
   constructor(
     private sourceCodeErrorReport: string = '',
-    private lastErrorLine: string = '',
+    private errorPointers: string[] = [],
+    private errorMsgs: string[] = []
+
   ){}
 
   /**
-   * Funcao que reconhece os tokens segundo a stream de entrada vinda de um arquivo .txt.
+   * Funcao que reconhece os tokens segundo a stream de entrada vinda de um arquivo .cic.
    * @param {string} inputPath caminho para o arquivo
    * @returns {Promise<TToken[]>} a funcao retorna uma lista com todos os tokens reconhecidos
   */
@@ -44,11 +46,13 @@ export class Lexer {
     for await (const fileLine of fileLines){
       const line = fileLine.includes('\n') ? fileLine : fileLine + '\n'
       this.sourceCodeErrorReport += `[${lineCounter}] ${line}`
+      this.errorPointers = []
+      this.errorMsgs = []
       for(let c = 0; c < line.length; c++){
         c = rewind ? c-1 : c
         rewind = false
         state = this.nextState(state, line[c])
-        
+        // Estados de rejeicao
         if(!state.key){
           if(/[^\n ]/.test(line[c]))
             this.setErrorOnSource(state,token.length, lineCounter, c)
@@ -56,7 +60,7 @@ export class Lexer {
           state = this.getStartState()
           continue
         }
-        
+        // Estados de erro
         if(state.err) {
           this.setErrorOnSource(state, token.length,lineCounter, c)
           token = ''
@@ -64,7 +68,7 @@ export class Lexer {
           rewind = state.pathHadWedding ? true : false
           continue
         }
-        
+        // Estados nao finais 
         if(!state.final){
           if(lineCounter === EOF.posLine && c === EOF.posCol){
             state = this.nextState(state, '$')
@@ -73,7 +77,7 @@ export class Lexer {
           token += line[c] !== '\n' ? line[c] : ''
           continue
         }
-        // passou por todos estados, ta no final    
+        // Estados finais
         let value: string
 
         if(state.pathHadWedding) {
@@ -91,21 +95,24 @@ export class Lexer {
             lin: lineCounter,
             col: c+1 -(value.length > 1 ? value.length : 0) 
           }) :
-          this.setErrorOnSource(state, token.length,lineCounter, c)
+          this.setErrorOnSource(state, token.length, lineCounter, c)
         }
-
+        
         token = ''
         state = this.getStartState()
       }
       lineCounter++
+      this.sourceCodeErrorReport += this.errorPointers.join('')
+      this.sourceCodeErrorReport += this.errorMsgs.join('')
     }
 
     return tokens
   }
   /**
-   * Funcao realiza a leitura do arquivo de entrada .txt.
+   * Funcao realiza a leitura do arquivo de entrada .cic.
    * @param {string} path caminho do arquivo
-   * @returns {Promise<fsPromises.FileHandle>} a funcao retorna um handler para o arquivo 
+   * @returns {Promise<{fileLines: AsyncIterable<string>, EOF: {posLine: number, posCol: number}}>} 
+   * a funcao retorna um objeto contendo as linhas e o final do arquivo 
   */
   private async readFile(path: string): Promise<{fileLines: AsyncIterable<string>, EOF: {posLine: number, posCol: number}}> {
     try {
@@ -135,7 +142,7 @@ export class Lexer {
    * em caso de nao existir tal transicao o estado de retorno eh o de rejeicao
    * @param {TState} state estado atual do automato
    * @param {string} c caracter atual da stream de leitura
-   * @returns {TState} a funcao retorna o proximo estado
+   * @returns {TState} proximo estado do automato
   */
   private nextState(state: TState, c: string): TState{
     for (const { regex, type } of Lexer.charTypeMappings){
@@ -150,7 +157,7 @@ export class Lexer {
     return { key: '' }
   }
   /**
-   * Funcao acha na lista de estados, o incial, caso nao exista tal estado ela dispara um erro.
+   * Metodo acha na lista de estados, o incial, caso nao exista tal estado ela dispara um erro.
    * @returns {TState} a funcao retorna o estado inicial do automato
   */
   private getStartState(): TState{
@@ -159,35 +166,41 @@ export class Lexer {
     return startState
   }
   /**
-   * Formata string, se o caracter for '\n', mostra como caracter nao como a quebra de linha
-   * @param {string} c caracter para teste
-   * @returns {string} a funcao retorna a string formatada
+   * Metodo para acessar o codigo com os erros encontrados
+   * @returns {string} a funcao retorna uma string
   */
-  private format(c: string): string { return c.localeCompare('\n') === 0 ? '\\n' : c}
   public getSourceCodeErrors(): string {return this.sourceCodeErrorReport}
+  /**
+   * Metodo para montar uma string que representa o codigo com os erros encontrados
+   * @param {TState} state estado atual
+   * @param {number} tokenSize tamanho do possivel token lido
+   * @param {number} line linha como um numero 
+   * @param {number} col coluna como um numero
+   * @returns {void} seta o valor de this.sourceCodeErrorReport, sem retorno
+  */
   private setErrorOnSource(state: TState, tokenSize: number,line: number, col: number): void{
     let errorPointer: string = ''
     const errorMsg: string | undefined = state.err?.msg 
-    const errorCol: number = errorMsg?.includes('Cadeia') ? col : col - tokenSize + 1
-    const newError: string = 
-    `   Erro linha ${line} coluna ${errorCol}: ${errorMsg ? errorMsg : 'Simbolo nao reconhecido'}\n`
+    const errorCol: number = state.err?.err_str ? col : col - tokenSize + 1
+    let newError: string = ''
+    newError += newError.padStart(`[${line}]`.length) +
+    `Erro linha ${line} coluna ${errorCol}: ${errorMsg ? errorMsg : 'Simbolo/Reservada nao reconhecivel'}\n`
 
-    this.sourceCodeErrorReport += '   '
+    
+    errorPointer += errorPointer.padStart(`[${line}]`.length)
     for(let i = 0; i < errorCol; i++)
       errorPointer += '-'
     errorPointer += '^\n'
 
-    this.sourceCodeErrorReport += errorPointer
-    
-    if(this.lastErrorLine === '') this.sourceCodeErrorReport += newError
-    if(this.lastErrorLine.includes(line.toString())){
-      this.sourceCodeErrorReport.replace(this.lastErrorLine, errorPointer)
-      this.sourceCodeErrorReport += this.lastErrorLine
-      this.sourceCodeErrorReport += newError
-    } 
-
-    this.lastErrorLine = newError
+    this.errorPointers.push(errorPointer)
+    this.errorMsgs.push(newError)
   }
+  /**
+   * Metodo usado para setar o lexema apenas para os tokens que podem te-los
+   * @param {string} tokenType string que corresponde ao nome do token
+   * @param {string} value valor do token
+   * @returns {string | undefined} retorna uma string que representa o lexama ou undefined se nao exister para aquele token
+  */
   private getLexeme(tokenType: string, value: string): string | undefined{
     return Lexer.canHaveLexeme.includes(TokenFamily[tokenType]) ? value : undefined
   }
